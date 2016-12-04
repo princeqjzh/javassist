@@ -40,7 +40,7 @@ import java.security.ProtectionDomain;
  * The startup program of an application using <code>MyTranslator</code>
  * should be something like this:
  *
- * <ul><pre>
+ * <pre>
  * import javassist.*;
  *
  * public class Main {
@@ -52,15 +52,15 @@ import java.security.ProtectionDomain;
  *     cl.run("MyApp", args);
  *   }
  * }
- * </pre></ul>
+ * </pre>
  *
  * <p>Class <code>MyApp</code> is the main program of the application.
  *
  * <p>This program should be executed as follows:
  *
- * <ul><pre>
+ * <pre>
  * % java Main <i>arg1</i> <i>arg2</i>...
- * </pre></ul>
+ * </pre>
  *
  * <p>It modifies the class <code>MyApp</code> with a <code>MyTranslator</code>
  * object before the JVM loads it.
@@ -69,9 +69,9 @@ import java.security.ProtectionDomain;
  *
  * <p>This program execution is equivalent to:
  *
- * <ul><pre>
+ * <pre>
  * % java MyApp <i>arg1</i> <i>arg2</i>...
- * </pre></ul>
+ * </pre>
  *
  * <p>except that classes are translated by <code>MyTranslator</code>
  * at load time.
@@ -81,12 +81,12 @@ import java.security.ProtectionDomain;
  * unnecessary.  For example, if only a class <code>test.Rectangle</code>
  * is modified, the <code>main()</code> method above will be the following:
  *
- * <ul><pre>
+ * <pre>
  * ClassPool cp = ClassPool.getDefault();
  * Loader cl = new Loader(cp);
  * CtClass ct = cp.get("test.Rectangle");
  * ct.setSuperclass(cp.get("test.Point"));
- * cl.run("MyApp", args);</pre></ul>
+ * cl.run("MyApp", args);</pre>
  *
  * <p>This program changes the super class of the <code>test.Rectangle</code>
  * class.
@@ -245,11 +245,9 @@ public class Loader extends ClassLoader {
      * <p>This method calls <code>run()</code>.
      *
      * @param args              command line parameters.
-     * <ul>
-     * <code>args[0]</code> is the class name to be loaded.
-     * <br><code>args[1..n]</code> are parameters passed
-     *                      to the target <code>main()</code>.
-     * </ul>
+     * <br>&nbsp;&nbsp;{@code args[0]} is the class name to be loaded.
+     * <br>&nbsp;&nbsp;{@code args[1..n]} are parameters passed
+     *                      to the target {@code main()}.
      *
      * @see javassist.Loader#run(String[])
      */
@@ -262,11 +260,10 @@ public class Loader extends ClassLoader {
      * Loads a class and calls <code>main()</code> in that class.
      *
      * @param args              command line parameters.
-     * <ul>
-     * <code>args[0]</code> is the class name to be loaded.
-     * <br><code>args[1..n]</code> are parameters passed
-     *                      to the target <code>main()</code>.
-     * </ul>
+     *
+     * <br>&nbsp;&nbsp;{@code args[0]} is the class name to be loaded.
+     * <br>&nbsp;&nbsp;{@code args[1..n]} are parameters passed
+     *                      to the target {@code main()}.
      */
     public void run(String[] args) throws Throwable {
         int n = args.length - 1;

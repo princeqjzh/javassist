@@ -69,18 +69,18 @@ public abstract class CtClass {
     /**
      * The version number of this release.
      */
-    public static final String version = "3.18.0-GA";
+    public static final String version = "3.22.0-CR1";
 
     /**
      * Prints the version number and the copyright notice.
      *
      * <p>The following command invokes this method:
      *
-     * <ul><pre>java -jar javassist.jar</pre></ul>
+     * <pre>java -jar javassist.jar</pre>
      */
     public static void main(String[] args) {
         System.out.println("Javassist version " + CtClass.version);
-        System.out.println("Copyright (C) 1999-2013 Shigeru Chiba."
+        System.out.println("Copyright (C) 1999-2016 Shigeru Chiba."
                            + " All Rights Reserved.");
     }
 
@@ -415,7 +415,7 @@ public abstract class CtClass {
      *
      * <p>For example,
      *
-     * <pre>class List<T> {
+     * <pre>class List&lt;T&gt; {
      *     T value;
      *     T get() { return value; }
      *     void set(T v) { value = v; }
@@ -462,6 +462,11 @@ public abstract class CtClass {
      * <p>but it includes generic signatures for the class, the field,
      * and the methods so that the type variable <code>T</code> can be
      * accessible through reflection.
+     *
+     * <p><code>MethodSignature</code> is a utility class.  You can directly
+     * pass the signature string to the <code>setGenericSignature</code> method.
+     * For the specification of the signatures, see Section 4.7.9.1 <i>Signatures</i>
+     * of The Java Virtual Machine Specification (Java SE 8).
      *
      * @param sig       a generic signature.
      * @see javassist.bytecode.SignatureAttribute.ClassSignature#encode()
@@ -577,24 +582,35 @@ public abstract class CtClass {
     }
 
     /**
-     * Returns true if the class has the specified annotation class.
+     * Returns true if the class has the specified annotation type.
      *
-     * @param clz the annotation class.
+     * @param annotationType the annotation type.
      * @return <code>true</code> if the annotation is found, otherwise <code>false</code>.
      * @since 3.11
      */
-    public boolean hasAnnotation(Class clz) {
+    public boolean hasAnnotation(Class annotationType) {
+        return hasAnnotation(annotationType.getName());
+    }
+
+    /**
+     * Returns true if the class has the specified annotation type.
+     *
+     * @param annotationTypeName the name of annotation type.
+     * @return <code>true</code> if the annotation is found, otherwise <code>false</code>.
+     * @since 3.21
+     */
+    public boolean hasAnnotation(String annotationTypeName) {
         return false;
     }
 
     /**
-     * Returns the annotation if the class has the specified annotation class.
+     * Returns the annotation if the class has the specified annotation type.
      * For example, if an annotation <code>@Author</code> is associated
      * with this class, an <code>Author</code> object is returned.
      * The member values can be obtained by calling methods on
      * the <code>Author</code> object.
      *
-     * @param clz the annotation class.
+     * @param clz the annotation type.
      * @return the annotation if found, otherwise <code>null</code>.
      * @since 3.11
      */
@@ -1095,11 +1111,11 @@ public abstract class CtClass {
      * Any regular Java expression can be used for specifying the initial
      * value.  The followings are examples.
      *
-     * <ul><pre>
+     * <pre>
      * cc.addField(f, "0")               // the initial value is 0.
      * cc.addField(f, "i + 1")           // i + 1.
      * cc.addField(f, "new Point()");    // a Point object.
-     * </pre></ul>
+     * </pre>
      *
      * <p>Here, the type of variable <code>cc</code> is <code>CtClass</code>.
      * The type of <code>f</code> is <code>CtField</code>.
@@ -1129,11 +1145,11 @@ public abstract class CtClass {
      *
      * <p>For example,
      *
-     * <ul><pre>
+     * <pre>
      * CtClass cc = ...;
      * addField(new CtField(CtClass.intType, "i", cc),
      *          CtField.Initializer.constant(1));
-     * </pre></ul>
+     * </pre>
      *
      * <p>This code adds an <code>int</code> field named "i".  The
      * initial value of this field is 1.
@@ -1168,9 +1184,9 @@ public abstract class CtClass {
      * <code>javassist.bytecode</code> package.  For example, the following
      * expression returns all the attributes of a class file.
      *
-     * <ul><pre>
+     * <pre>
      * getClassFile().getAttributes()
-     * </pre></ul>
+     * </pre>
      *
      * @param name              attribute name
      * @see javassist.bytecode.AttributeInfo
@@ -1193,9 +1209,9 @@ public abstract class CtClass {
      * <code>javassist.bytecode</code> package.  For example, the following
      * expression adds an attribute <code>info</code> to a class file.
      *
-     * <ul><pre>
+     * <pre>
      * getClassFile().addAttribute(info)
-     * </pre></ul>
+     * </pre>
      *
      * @param name      attribute name
      * @param data      attribute value

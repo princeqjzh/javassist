@@ -7,7 +7,7 @@
 
 <h1>Javassist version 3</h1>
 
-<h3>Copyright (C) 1999-2013 by Shigeru Chiba, All rights reserved.</h3>
+<h3>Copyright (C) 1999-2016 by Shigeru Chiba, All rights reserved.</h3>
 
 <p><br></p>
 
@@ -32,7 +32,7 @@ other editors.
 <table>
 <tr>
 <td><li><tt><a href="License.html">License.html</a></tt></td>
-<td>License file
+<td>License file (MPL/LGPL/Apache triple license)
 (Also see the <a href="#copyright">copyright notices</a> below)</td>
 </tr>
 
@@ -281,10 +281,34 @@ see javassist.Dump.
 
 <h2>Changes</h2>
 
-<p>-version 3.19
+<p>-version 3.22
+
+<ul>
+<li>JIRA JASSIST-261.
+</ul>
+</p>
+
+<p>-version 3.21 on October 4, 2016
+<ul>
+<li>JIRA JASSIST-244, 245, 248, 250, 255, 256, 259, 262.
+<li><code>javassist.tools.Callback</code> was modified to be Java 1.4 compatible.
+The parameter type of <code>Callback#result()</code> was changed.
+<li>The algorithm for generating a stack-map table was modified to fix github issue #83.
+<li>A bug of ProxyFactory related to default methods was fixed.  It is github issue #45. 
+</ul>
+</p>
+
+<p>-version 3.20 on June 25, 2015
+<ul>
+<li>JIRA JASSIST-241, 242, 246.
+</ul>
+</p>
+
+
+<p>-version 3.19 on January 6, 2015
 <ul>
 <li>JIRA JASSIST-158, 205, 206, 207, 208, 209, 211, 212, 216, 220, 223, 224,
-        227, 230, 234, 235, 236, 237.
+        227, 230, 234, 235, 236, 237, 238, 240.
 </ul>
 </p>
 

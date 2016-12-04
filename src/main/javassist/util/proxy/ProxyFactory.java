@@ -46,7 +46,7 @@ import javassist.bytecode.*;
  *
  * <p>For example, if the following code is executed,
  * 
- * <ul><pre>
+ * <pre>
  * ProxyFactory f = new ProxyFactory();
  * f.setSuperclass(Foo.class);
  * f.setFilter(new MethodFilter() {
@@ -65,7 +65,7 @@ import javassist.bytecode.*;
  * };
  * Foo foo = (Foo)c.newInstance();
  * ((Proxy)foo).setHandler(mi);
- * </pre></ul>
+ * </pre>
  *
  * <p>Here, <code>Method</code> is <code>java.lang.reflect.Method</code>.</p>
  *
@@ -73,40 +73,40 @@ import javassist.bytecode.*;
  * <code>mi</code> and prints a message before executing the originally called method
  * <code>bar()</code> in <code>Foo</code>.
  *
- * <ul><pre>
+ * <pre>
  * foo.bar();
- * </pre></ul>
+ * </pre>
  *
  * <p>The last three lines of the code shown above can be replaced with a call to
  * the helper method <code>create</code>, which generates a proxy class, instantiates
  * it, and sets the method handler of the instance:
  *
- * <ul><pre>
+ * <pre>
  *     :
  * Foo foo = (Foo)f.create(new Class[0], new Object[0], mi);
- * </pre></ul>
+ * </pre>
  *
  * <p>To change the method handler during runtime,
  * execute the following code:
  *
- * <ul><pre>
+ * <pre>
  * MethodHandler mi = ... ;    // alternative handler
  * ((Proxy)foo).setHandler(mi);
- * </pre></ul>
+ * </pre>
  *
  * <p> If setHandler is never called for a proxy instance then it will
  * employ the default handler which proceeds by invoking the original method.
  * The behaviour of the default handler is identical to the following
  * handler:
  *
- * <ul><pre>
+ * <pre>
  * class EmptyHandler implements MethodHandler {
  *     public Object invoke(Object self, Method m,
  *                          Method proceed, Object[] args) throws Exception {
  *         return proceed.invoke(self, args);
  *     }
  * }
- * </pre></ul>
+ * </pre>
  *
  * <p>A proxy factory caches and reuses proxy classes by default. It is possible to reset
  * this default globally by setting static field {@link ProxyFactory#useCache} to false.
@@ -421,19 +421,20 @@ public class ProxyFactory {
     }
 
     private Class createClass1() {
-        if (thisClass == null) {
+        Class result = thisClass;
+        if (result == null) {
             ClassLoader cl = getClassLoader();
             synchronized (proxyCache) {
                 if (factoryUseCache)
                     createClass2(cl);
                 else 
                     createClass3(cl);
+
+                result = thisClass;
+                // don't retain any unwanted references
+                thisClass = null;
             }
         }
-
-        // don't retain any unwanted references
-        Class result = thisClass;
-        thisClass = null;
 
         return result;
     }
@@ -592,13 +593,13 @@ public class ProxyFactory {
      * implementation.
      *
      * <p>Example:
-     * <ul><pre>
+     * <pre>
      * ProxyFactory.classLoaderProvider = new ProxyFactory.ClassLoaderProvider() {
      *     public ClassLoader get(ProxyFactory pf) {
      *         return Thread.currentThread().getContextClassLoader();
      *     }
      * };
-     * </pre></ul>
+     * </pre>
      *
      * @since 3.4
      */
@@ -1146,22 +1147,39 @@ public class ProxyFactory {
         for (int i = 0; i < methods.length; i++)
             if (!Modifier.isPrivate(methods[i].getModifiers())) {
                 Method m = methods[i];
-                String key = m.getName() + ':' + RuntimeSupport.makeDescriptor(m);	// see keyToDesc().
+                String key = m.getName() + ':' + RuntimeSupport.makeDescriptor(m);  // see keyToDesc().
                 if (key.startsWith(HANDLER_GETTER_KEY))
                     hasGetHandler = true;
 
                 // JIRA JASSIST-85
                 // put the method to the cache, retrieve previous definition (if any) 
-                Method oldMethod = (Method)hash.put(key, methods[i]); 
+                Method oldMethod = (Method)hash.put(key, m);
+
+                // JIRA JASSIST-244
+                // ignore a bridge method with the same signature that the overridden one has.
+                if (null != oldMethod && isBridge(m)
+                    && !Modifier.isPublic(oldMethod.getDeclaringClass().getModifiers())
+                    && !Modifier.isAbstract(oldMethod.getModifiers()) && !isOverloaded(i, methods))
+                    hash.put(key, oldMethod);
 
                 // check if visibility has been reduced 
                 if (null != oldMethod && Modifier.isPublic(oldMethod.getModifiers())
-                                      && !Modifier.isPublic(methods[i].getModifiers()) ) { 
+                                      && !Modifier.isPublic(m.getModifiers())) { 
                     // we tried to overwrite a public definition with a non-public definition,
                     // use the old definition instead. 
                     hash.put(key, oldMethod); 
                 }
             }
+    }
+
+    private static boolean isOverloaded(int index, Method[] methods) {
+        String name = methods[index].getName();
+        for (int i = 0; i < methods.length; i++)
+            if (i != index)
+                if (name.equals(methods[i].getName()))
+                    return true;
+
+        return false;
     }
 
     private static final String HANDLER_GETTER_KEY
@@ -1212,7 +1230,7 @@ public class ProxyFactory {
         return minfo;
     }
 
-    private static MethodInfo makeDelegator(Method meth, String desc,
+    private MethodInfo makeDelegator(Method meth, String desc,
                 ConstPool cp, Class declClass, String delegatorName) {
         MethodInfo delegator = new MethodInfo(cp, delegatorName, desc);
         delegator.setAccessFlags(Modifier.FINAL | Modifier.PUBLIC
@@ -1225,11 +1243,27 @@ public class ProxyFactory {
         Bytecode code = new Bytecode(cp, 0, 0);
         code.addAload(0);
         int s = addLoadParameters(code, meth.getParameterTypes(), 1);
-        code.addInvokespecial(declClass.getName(), meth.getName(), desc);
+        Class targetClass = invokespecialTarget(declClass);
+        code.addInvokespecial(targetClass.isInterface(), cp.addClassInfo(targetClass.getName()),
+                              meth.getName(), desc);
         addReturn(code, meth.getReturnType());
         code.setMaxLocals(++s);
         delegator.setCodeAttribute(code.toCodeAttribute());
         return delegator;
+    }
+
+    /* Suppose that the receiver type is S, the invoked method
+     * is declared in T, and U is the immediate super class of S
+     * (or its interface).  If S <: U <: T (S <: T reads "S extends T"), 
+     * the target type of invokespecial has to be not T but U.
+     */
+    private Class invokespecialTarget(Class declClass) {
+        if (declClass.isInterface())
+            for (Class i: interfaces)
+                if (declClass.isAssignableFrom(i))
+                    return i;
+
+        return superClass;
     }
 
     /**

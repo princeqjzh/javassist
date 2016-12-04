@@ -31,6 +31,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Enumeration;
+
+import javassist.bytecode.ClassFile;
 import javassist.bytecode.Descriptor;
 
 /**
@@ -213,15 +215,17 @@ public class ClassPool {
      * <p>When this method is called for the first time, the default
      * class pool is created with the following code snippet:
      *
-     * <ul><code>ClassPool cp = new ClassPool();
+     * <pre>ClassPool cp = new ClassPool();
      * cp.appendSystemPath();
-     * </code></ul>
+     * </pre>
      *
      * <p>If the default class pool cannot find any class files,
-     * try <code>ClassClassPath</code> and <code>LoaderClassPath</code>.
+     * try <code>ClassClassPath</code>, <code>ModuleClassPath</code>,
+     * or <code>LoaderClassPath</code>.
      *
      * @see ClassClassPath
      * @see LoaderClassPath
+     * @see ModuleClassPath
      */
     public static synchronized ClassPool getDefault() {
         if (defaultPool == null) {
@@ -250,7 +254,7 @@ public class ClassPool {
      * caching of classes.
      *
      * @see #getCached(String)
-     * @see #removeCached(String,CtClass)
+     * @see #removeCached(String)
      */
     protected void cacheCtClass(String classname, CtClass c, boolean dynamic) {
         classes.put(classname, c);
@@ -381,9 +385,9 @@ public class ClassPool {
      * This method is useful if you want to generate a new class as a copy
      * of another class (except the class name).  For example,
      *
-     * <ul><pre>
+     * <pre>
      * getAndRename("Point", "Pair")
-     * </pre></ul>
+     * </pre>
      *
      * returns a <code>CtClass</code> object representing <code>Pair</code>
      * class.  The definition of <code>Pair</code> is the same as that of
@@ -517,7 +521,6 @@ public class ClassPool {
 
     /**
      * @param useCache      false if the cached CtClass must be ignored.
-     * @param searchParent  false if the parent class pool is not searched.
      * @return null     if the class could not be found.
      */
     protected synchronized CtClass get0(String classname, boolean useCache)
@@ -725,6 +728,54 @@ public class ClassPool {
     {
         compress();
         classfile = new BufferedInputStream(classfile);
+        CtClass clazz = new CtClassType(classfile, this);
+        clazz.checkModify();
+        String classname = clazz.getName();
+        if (ifNotFrozen)
+            checkNotFrozen(classname);
+
+        cacheCtClass(classname, clazz, true);
+        return clazz;
+    }
+
+    /**
+     * Creates a new class (or interface) from the given class file.
+     * If there already exists a class with the same name, the new class
+     * overwrites that previous class.
+     *
+     * <p>This method is used for creating a <code>CtClass</code> object
+     * directly from a class file.  The qualified class name is obtained
+     * from the class file; you do not have to explicitly give the name.
+     *
+     * @param classfile         class file.
+     * @throws RuntimeException if there is a frozen class with the
+     *                          the same name.
+     * @since 3.20
+     */
+    public CtClass makeClass(ClassFile classfile)
+        throws RuntimeException
+    {
+        return makeClass(classfile, true);
+    }
+
+    /**
+     * Creates a new class (or interface) from the given class file.
+     * If there already exists a class with the same name, the new class
+     * overwrites that previous class.
+     *
+     * <p>This method is used for creating a <code>CtClass</code> object
+     * directly from a class file.  The qualified class name is obtained
+     * from the class file; you do not have to explicitly give the name.
+     *
+     * @param classfile     class file.
+     * @param ifNotFrozen       throws a RuntimeException if this parameter is true
+     *                          and there is a frozen class with the same name.
+     * @since 3.20
+     */
+    public CtClass makeClass(ClassFile classfile, boolean ifNotFrozen)
+        throws RuntimeException
+    {
+        compress();
         CtClass clazz = new CtClassType(classfile, this);
         clazz.checkModify();
         String classname = clazz.getName();
@@ -1103,13 +1154,13 @@ public class ClassPool {
             Object[] args;
             if (domain == null) {
                 method = defineClass1;
-                args = new Object[] { ct.getName(), b, new Integer(0),
-                                      new Integer(b.length)};
+                args = new Object[] { ct.getName(), b, Integer.valueOf(0),
+                                      Integer.valueOf(b.length)};
             }
             else {
                 method = defineClass2;
-                args = new Object[] { ct.getName(), b, new Integer(0),
-                    new Integer(b.length), domain};
+                args = new Object[] { ct.getName(), b, Integer.valueOf(0),
+                                      Integer.valueOf(b.length), domain};
             }
 
             return (Class)toClass2(method, loader, args);

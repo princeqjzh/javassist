@@ -842,7 +842,7 @@ public class JvstTest extends JvstTestRoot {
         // cloader.loadClass(cc.getName());
         java.io.File genDir = new java.io.File(".");
         java.net.URLClassLoader ucl = new java.net.URLClassLoader(
-                        new java.net.URL[] { genDir.toURL() }, null);
+                        new java.net.URL[] { genDir.toURI().toURL() }, null);
         Class intf = ucl.loadClass("test1.MkInterface");
     }
 
@@ -1041,7 +1041,7 @@ public class JvstTest extends JvstTestRoot {
     }
 
     public void testPackage() throws Exception {
-        Object obj = new Loader().loadClass("test1.Pac").newInstance();
+        Object obj = new Loader().loadClass("test1.Pac").getConstructor().newInstance();
         assertEquals(1, invoke(obj, "run"));
     }
 

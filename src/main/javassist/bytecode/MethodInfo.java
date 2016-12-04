@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javassist.ClassPool;
 import javassist.bytecode.stackmap.MapMaker;
 
@@ -30,9 +31,25 @@ import javassist.bytecode.stackmap.MapMaker;
  *
  * <p>The bytecode sequence of the method is represented
  * by a <code>CodeAttribute</code> object.
+ *
+ * <p>The following code adds the default constructor to a class:
+ * of <code>int</code> type:
+ * <blockquote><pre>
+ * ClassFile cf = ...
+ * Bytecode code = new Bytecode(cf.getConstPool());
+ * code.addAload(0);
+ * code.addInvokespecial("java/lang/Object", MethodInfo.nameInit, "()V");
+ * code.addReturn(null);
+ * code.setMaxLocals(1);
+ *
+ * MethodInfo minfo = new MethodInfo(cf.getConstPool(), MethodInfo.nameInit, "()V");
+ * minfo.setCodeAttribute(code.toCodeAttribute());
+ * cf.addMethod(minfo);
+ * </pre></blockquote>
  * 
  * @see #getCodeAttribute()
  * @see CodeAttribute
+ * @see Bytecode
  * @see javassist.CtMethod#getMethodInfo()
  * @see javassist.CtConstructor#getMethodInfo()
  */
@@ -52,13 +69,13 @@ public class MethodInfo {
     public static boolean doPreverify = false;
 
     /**
-     * The name of constructors: <code>&lt;init&gt</code>.
+     * The name of constructors: <code>&lt;init&gt;</code>.
      */
     public static final String nameInit = "<init>";
 
     /**
      * The name of class initializer (static initializer):
-     * <code>&lt;clinit&gt</code>.
+     * <code>&lt;clinit&gt;</code>.
      */
     public static final String nameClinit = "<clinit>";
 
@@ -298,12 +315,28 @@ public class MethodInfo {
      * Returns the attribute with the specified name. If it is not found, this
      * method returns null.
      * 
+     * <p>An attribute name can be obtained by, for example,
+     * {@link AnnotationsAttribute#visibleTag} or
+     * {@link AnnotationsAttribute#invisibleTag}.
+     * </p>
+     * 
      * @param name attribute name
      * @return an <code>AttributeInfo</code> object or null.
      * @see #getAttributes()
      */
     public AttributeInfo getAttribute(String name) {
         return AttributeInfo.lookup(attribute, name);
+    }
+
+    /**
+     * Removes an attribute with the specified name.
+     *
+     * @param name      attribute name.
+     * @return          the removed attribute or null.
+     * @since 3.21
+     */
+    public AttributeInfo removeAttribute(String name) {
+        return AttributeInfo.remove(attribute, name);
     }
 
     /**

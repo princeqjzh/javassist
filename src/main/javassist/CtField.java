@@ -144,9 +144,9 @@ public class CtField extends CtMember {
      * Compiles the given source code and creates a field.
      * Examples of the source code are:
      *
-     * <ul><pre>
+     * <pre>
      * "public String name;"
-     * "public int k = 3;"</pre></ul>
+     * "public int k = 3;"</pre>
      *
      * <p>Note that the source code ends with <code>';'</code>
      * (semicolon).
@@ -242,19 +242,19 @@ public class CtField extends CtMember {
     }
 
     /**
-     * Returns true if the class has the specified annotation class.
+     * Returns true if the class has the specified annotation type.
      *
-     * @param clz the annotation class.
+     * @param typeName      the name of annotation type.
      * @return <code>true</code> if the annotation is found, otherwise <code>false</code>.
-     * @since 3.11
+     * @since 3.21
      */
-    public boolean hasAnnotation(Class clz) {
+    public boolean hasAnnotation(String typeName) {
         FieldInfo fi = getFieldInfo2();
         AnnotationsAttribute ainfo = (AnnotationsAttribute)
                     fi.getAttribute(AnnotationsAttribute.invisibleTag);  
         AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
                     fi.getAttribute(AnnotationsAttribute.visibleTag);  
-        return CtClassType.hasAnnotationType(clz, getDeclaringClass().getClassPool(),
+        return CtClassType.hasAnnotationType(typeName, getDeclaringClass().getClassPool(),
                                              ainfo, ainfo2);
     }
 
@@ -374,6 +374,17 @@ public class CtField extends CtMember {
 
     /**
      * Sets the type of the field.
+     *
+     * <p>This method does not automatically update method bodies that access
+     * this field.  They have to be explicitly updated.  For example,
+     * if some method contains an expression {@code t.value} and the type
+     * of the variable {@code t} is changed by {@link #setType(CtClass)}
+     * from {@code int} to {@code double}, then {@code t.value} has to be modified
+     * as well since the bytecode of {@code t.value} contains the type information.
+     * </p>
+     *
+     * @see CodeConverter
+     * @see javassist.expr.ExprEditor
      */
     public void setType(CtClass clazz) {
         declaringClass.checkModify();
@@ -405,18 +416,18 @@ public class CtField extends CtMember {
         ConstPool cp = fieldInfo.getConstPool();
         switch (cp.getTag(index)) {
             case ConstPool.CONST_Long :
-                return new Long(cp.getLongInfo(index));
+                return Long.valueOf(cp.getLongInfo(index));
             case ConstPool.CONST_Float :
-                return new Float(cp.getFloatInfo(index));
+                return Float.valueOf(cp.getFloatInfo(index));
             case ConstPool.CONST_Double :
-                return new Double(cp.getDoubleInfo(index));
+                return Double.valueOf(cp.getDoubleInfo(index));
             case ConstPool.CONST_Integer :
                 int value = cp.getIntegerInfo(index);
                 // "Z" means boolean type.
                 if ("Z".equals(fieldInfo.getDescriptor()))
-                    return new Boolean(value != 0);
+                    return Boolean.valueOf(value != 0);
                 else
-                    return new Integer(value);
+                    return Integer.valueOf(value);
             case ConstPool.CONST_String :
                 return cp.getStringInfo(index);
             default :
@@ -551,8 +562,7 @@ public class CtField extends CtMember {
          * value of the field.  The constructor of the created object receives
          * the parameter:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
-         * </ul>
+         * <p><code>Object obj</code> - the object including the field.
          *
          * <p>If the initialized field is static, then the constructor does
          * not receive any parameters.
@@ -574,10 +584,9 @@ public class CtField extends CtMember {
          * value of the field.  The constructor of the created object receives
          * the parameters:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
+         * <p><code>Object obj</code> - the object including the field.<br>
          *     <code>String[] strs</code> - the character strings specified
          *                              by <code>stringParams</code><br>
-         * </ul>
          *
          * <p>If the initialized field is static, then the constructor
          * receives only <code>strs</code>.
@@ -602,11 +611,10 @@ public class CtField extends CtMember {
          * value of the field.  The constructor of the created object receives
          * the parameters:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
+         * <p><code>Object obj</code> - the object including the field.<br>
          *     <code>Object[] args</code> - the parameters passed to the
          *                      constructor of the object including the
          *                      filed.
-         * </ul>
          *
          * <p>If the initialized field is static, then the constructor does
          * not receive any parameters.
@@ -631,13 +639,12 @@ public class CtField extends CtMember {
          * value of the field.  The constructor of the created object receives
          * the parameters:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
+         * <p><code>Object obj</code> - the object including the field.<br>
          *     <code>String[] strs</code> - the character strings specified
          *                              by <code>stringParams</code><br>
          *     <code>Object[] args</code> - the parameters passed to the
          *                      constructor of the object including the
          *                      filed.
-         * </ul>
          *
          * <p>If the initialized field is static, then the constructor receives
          * only <code>strs</code>.
@@ -662,8 +669,7 @@ public class CtField extends CtMember {
          * value as the initial value of the field.
          * The called method receives the parameters:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
-         * </ul>
+         * <p><code>Object obj</code> - the object including the field.
          *
          * <p>If the initialized field is static, then the method does
          * not receive any parameters.
@@ -692,10 +698,9 @@ public class CtField extends CtMember {
          * value as the initial value of the field.  The called method
          * receives the parameters:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
+         * <p><code>Object obj</code> - the object including the field.<br>
          *     <code>String[] strs</code> - the character strings specified
          *                              by <code>stringParams</code><br>
-         * </ul>
          *
          * <p>If the initialized field is static, then the method
          * receive only <code>strs</code>.
@@ -727,11 +732,10 @@ public class CtField extends CtMember {
          * value as the initial value of the field.  The called method
          * receives the parameters:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
+         * <p><code>Object obj</code> - the object including the field.<br>
          *     <code>Object[] args</code> - the parameters passed to the
          *                      constructor of the object including the
          *                      filed.
-         * </ul>
          *
          * <p>If the initialized field is static, then the method does
          * not receive any parameters.
@@ -760,13 +764,12 @@ public class CtField extends CtMember {
          * value as the initial value of the field.  The called method
          * receives the parameters:
          *
-         * <ul><code>Object obj</code> - the object including the field.<br>
+         * <p><code>Object obj</code> - the object including the field.<br>
          *     <code>String[] strs</code> - the character strings specified
          *                              by <code>stringParams</code><br>
          *     <code>Object[] args</code> - the parameters passed to the
          *                      constructor of the object including the
          *                      filed.
-         * </ul>
          *
          * <p>If the initialized field is static, then the method
          * receive only <code>strs</code>.

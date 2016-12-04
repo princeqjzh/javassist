@@ -100,10 +100,10 @@ public class ObjectImporter implements java.io.Serializable {
      * <p>If you run a program with <code>javassist.tools.web.Viewer</code>,
      * you can construct an object importer as follows:
      *
-     * <ul><pre>
+     * <pre>
      * Viewer v = (Viewer)this.getClass().getClassLoader();
      * ObjectImporter oi = new ObjectImporter(v.getServer(), v.getPort());
-     * </pre></ul>
+     * </pre>
      *
      * @see javassist.tools.web.Viewer
      */
@@ -189,7 +189,7 @@ public class ObjectImporter implements java.io.Serializable {
     private Object createProxy(int oid, String classname) throws Exception {
         Class c = Class.forName(classname);
         Constructor cons = c.getConstructor(proxyConstructorParamTypes);
-        return cons.newInstance(new Object[] { this, new Integer(oid) });
+        return cons.newInstance(new Object[] { this, Integer.valueOf(oid) });
     }
 
     /**

@@ -852,7 +852,7 @@ public class JvstTest3 extends JvstTestRoot {
     {
         java.lang.reflect.Method m =
             target.getClass().getMethod(method, new Class[] { long.class, int.class });
-        Object res = m.invoke(target, new Object[] { new Long(arg1), new Integer(arg2)});
+        Object res = m.invoke(target, new Object[] { Long.valueOf(arg1), Integer.valueOf(arg2)});
         return ((Integer)res).intValue();
     }
 
@@ -861,7 +861,7 @@ public class JvstTest3 extends JvstTestRoot {
     {
         java.lang.reflect.Method m =
             target.getClass().getMethod(method, new Class[] { int.class, double.class });
-        Object res = m.invoke(target, new Object[] { new Integer(arg1), new Double(arg2)});
+        Object res = m.invoke(target, new Object[] { Integer.valueOf(arg1), Double.valueOf(arg2)});
         return ((Integer)res).intValue();
     }
 
@@ -870,7 +870,7 @@ public class JvstTest3 extends JvstTestRoot {
     {
         java.lang.reflect.Method m =
             target.getClass().getMethod(method, new Class[] { int.class, String.class, Object.class });
-        Object res = m.invoke(target, new Object[] { new Integer(arg1), arg2, arg3});
+        Object res = m.invoke(target, new Object[] { Integer.valueOf(arg1), arg2, arg3});
         return ((Integer)res).intValue();
     }
 
@@ -1086,7 +1086,8 @@ public class JvstTest3 extends JvstTestRoot {
         CtMethod m3 = CtMethod.make("public void foo3() {}", cc);
         try {
             cc.addMethod(m3);
-            fail();
+            if (ClassFile.MAJOR_VERSION < ClassFile.JAVA_8)
+                fail();
         }
         catch (CannotCompileException e) {
             // System.out.println(e);
@@ -1106,7 +1107,7 @@ public class JvstTest3 extends JvstTestRoot {
         sb.append("}"); 
         ctc.addMethod(CtNewMethod.make(sb.toString(), ctc));
         ctc.debugWriteFile();
-        ctc.toClass().newInstance(); 
+        ctc.toClass().getConstructor().newInstance();
     }
 
     // JIRA-83

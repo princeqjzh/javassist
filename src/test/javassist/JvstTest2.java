@@ -516,15 +516,15 @@ public class JvstTest2 extends JvstTestRoot {
         CtClass out = sloader.get("test2.Anon");
         CtClass inner = sloader.get("test2.Anon$1");
         if (System.getProperty("java.vm.version").startsWith("1.4"))
-            assertTrue(inner.getEnclosingMethod() == null);
+            assertTrue(inner.getEnclosingBehavior() == null);
         else {
-            assertEquals("make", inner.getEnclosingMethod().getName());
+            assertEquals("make", inner.getEnclosingBehavior().getName());
             assertEquals(out, inner.getDeclaringClass());
             assertEquals(out,
-                         inner.getEnclosingMethod().getDeclaringClass());
+                         inner.getEnclosingBehavior().getDeclaringClass());
         }
 
-        assertNull(out.getEnclosingMethod());
+        assertNull(out.getEnclosingBehavior());
         assertNull(out.getEnclosingBehavior());
 
         CtClass inner2 = sloader.get("test2.Anon$Anon2$1");
@@ -1423,32 +1423,32 @@ public class JvstTest2 extends JvstTestRoot {
         CtField f = new CtField(CtClass.intType, "sff1", cc);
         f.setModifiers(Modifier.STATIC | Modifier.FINAL);
         cc.addField(f, "5");
-        assertEquals(new Integer(5), f.getConstantValue());
+        assertEquals(Integer.valueOf(5), f.getConstantValue());
 
         f = new CtField(CtClass.longType, "sff2", cc);
         f.setModifiers(Modifier.STATIC | Modifier.FINAL);
         cc.addField(f, "6");
-        assertEquals(new Long(6), f.getConstantValue());
+        assertEquals(Long.valueOf(6), f.getConstantValue());
 
         f = new CtField(CtClass.floatType, "sff3", cc);
         f.setModifiers(Modifier.STATIC | Modifier.FINAL);
         cc.addField(f, "7");
-        assertEquals(new Float(7.0F), f.getConstantValue());
+        assertEquals(Float.valueOf(7.0F), f.getConstantValue());
 
         f = new CtField(CtClass.floatType, "sff4", cc);
         f.setModifiers(Modifier.STATIC | Modifier.FINAL);
         cc.addField(f, "8.0");
-        assertEquals(new Float(8.0F), f.getConstantValue());
+        assertEquals(Float.valueOf(8.0F), f.getConstantValue());
 
         f = new CtField(CtClass.doubleType, "sff5", cc);
         f.setModifiers(Modifier.STATIC | Modifier.FINAL);
         cc.addField(f, "9");
-        assertEquals(new Double(9.0), f.getConstantValue());
+        assertEquals(Double.valueOf(9.0), f.getConstantValue());
 
         f = new CtField(CtClass.doubleType, "sff6", cc);
         f.setModifiers(Modifier.STATIC | Modifier.FINAL);
         cc.addField(f, "10.0");
-        assertEquals(new Double(10.0), f.getConstantValue());
+        assertEquals(Double.valueOf(10.0), f.getConstantValue());
 
         f = new CtField(sloader.get("java.lang.String"), "sff7", cc);
         f.setModifiers(Modifier.STATIC | Modifier.FINAL);

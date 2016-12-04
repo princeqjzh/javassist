@@ -23,13 +23,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+
 import javassist.CannotCompileException;
 
 /**
  * <code>ClassFile</code> represents a Java <code>.class</code> file, which
  * consists of a constant pool, methods, fields, and attributes.
- * 
+ *
+ * <p>For example,</p>
+ * <blockquote><pre>
+ * ClassFile cf = new ClassFile(false, "test.Foo", null);
+ * cf.setInterfaces(new String[] { "java.lang.Cloneable" });
+ *
+ * FieldInfo f = new FieldInfo(cf.getConstPool(), "width", "I");
+ * f.setAccessFlags(AccessFlag.PUBLIC);
+ * cf.addField(f);
+ *
+ * cf.write(new DataOutputStream(new FileOutputStream("Foo.class")));
+ * </pre></blockquote>
+ * <p>This code generates a class file <code>Foo.class</code> for the following class:</p>
+ * <blockquote><pre>
+ * package test;
+ * class Foo implements Cloneable {
+ *     public int width;
+ * }
+ * </pre></blockquote>
+ *
+ * @see FieldInfo
+ * @see MethodInfo
+ * @see ClassFileWriter
  * @see javassist.CtClass#getClassFile()
+ * @see javassist.ClassPool#makeClass(ClassFile)
  */
 public final class ClassFile {
     int major, minor; // version number
@@ -94,6 +118,12 @@ public final class ClassFile {
     public static final int JAVA_8 = 52;
 
     /**
+     * The major version number of class files
+     * for JDK 1.9.
+     */
+    public static final int JAVA_9 = 53;
+
+    /**
      * The major version number of class files created
      * from scratch.  The default value is 47 (JDK 1.3).
      * It is 49 (JDK 1.5)
@@ -102,19 +132,29 @@ public final class ClassFile {
      * if the JVM supports <code>java.util.zip.DeflaterInputStream</code>.
      * It is 51 (JDK 1.7)
      * if the JVM supports <code>java.lang.invoke.CallSite</code>.
+     * It is 52 (JDK 1.8)
+     * if the JVM supports <code>java.util.function.Function</code>.
+     * It is 53 (JDK 1.9)
+     * if the JVM supports <code>java.lang.reflect.Module</code>.
      */
-    public static int MAJOR_VERSION = JAVA_3;
+    public static final int MAJOR_VERSION;
 
     static {
+        int ver = JAVA_3;
         try {
             Class.forName("java.lang.StringBuilder");
-            MAJOR_VERSION = JAVA_5;
+            ver = JAVA_5;
             Class.forName("java.util.zip.DeflaterInputStream");
-            MAJOR_VERSION = JAVA_6;
+            ver = JAVA_6;
             Class.forName("java.lang.invoke.CallSite");
-            MAJOR_VERSION = JAVA_7;
+            ver = JAVA_7;
+            Class.forName("java.util.function.Function");
+            ver = JAVA_8;
+            Class.forName("java.lang.reflect.Module");
+            ver = JAVA_9;
         }
         catch (Throwable t) {}
+        MAJOR_VERSION = ver;
     }
 
     /**
@@ -132,7 +172,7 @@ public final class ClassFile {
      * @param classname
      *            a fully-qualified class name
      * @param superclass
-     *            a fully-qualified super class name
+     *            a fully-qualified super class name or null.
      */
     public ClassFile(boolean isInterface, String classname, String superclass) {
         major = MAJOR_VERSION;
@@ -319,7 +359,7 @@ public final class ClassFile {
      *
      * <p>The returned value is obtained from <code>inner_class_access_flags</code>
      * of the entry representing this nested class itself
-     * in <code>InnerClasses_attribute</code>>. 
+     * in <code>InnerClasses_attribute</code>. 
      */
     public int getInnerAccessFlags() {
         InnerClassesAttribute ica
@@ -731,6 +771,11 @@ public final class ClassFile {
      * Returns the attribute with the specified name.  If there are multiple
      * attributes with that name, this method returns either of them.   It
      * returns null if the specified attributed is not found.
+     *
+     * <p>An attribute name can be obtained by, for example,
+     * {@link AnnotationsAttribute#visibleTag} or
+     * {@link AnnotationsAttribute#invisibleTag}. 
+     * </p>
      * 
      * @param name          attribute name
      * @see #getAttributes()
@@ -745,6 +790,17 @@ public final class ClassFile {
         }
 
         return null;
+    }
+
+    /**
+     * Removes an attribute with the specified name.
+     *
+     * @param name      attribute name.
+     * @return          the removed attribute or null.
+     * @since 3.21
+     */
+    public AttributeInfo removeAttribute(String name) {
+        return AttributeInfo.remove(attributes, name);
     }
 
     /**

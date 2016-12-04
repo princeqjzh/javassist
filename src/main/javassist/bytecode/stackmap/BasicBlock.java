@@ -196,7 +196,7 @@ public class BasicBlock {
 
         private Mark makeMark0(HashMap table, int pos,
                                boolean isBlockBegin, boolean isTarget) {
-            Integer p = new Integer(pos);
+            Integer p = Integer.valueOf(pos);
             Mark m = (Mark)table.get(p);
             if (m == null) {
                 m = new Mark(pos);
@@ -360,6 +360,7 @@ public class BasicBlock {
                             prev.length = m.position - prev.position;
                             // the incoming flow from dead code is not counted
                             // bb.incoming++;
+                            prev.stop = true;   // because the incoming flow is not counted.
                             prev.exit = makeArray(bb);
                         }
                     }

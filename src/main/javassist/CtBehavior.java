@@ -159,20 +159,20 @@ public abstract class CtBehavior extends CtMember {
     }
 
     /**
-     * Returns true if the class has the specified annotation class.
+     * Returns true if the class has the specified annotation type.
      *
-     * @param clz the annotation class.
+     * @param typeName      the name of annotation type.
      * @return <code>true</code> if the annotation is found,
      *         otherwise <code>false</code>.
-     * @since 3.11
+     * @since 3.21
      */
-    public boolean hasAnnotation(Class clz) {
+    public boolean hasAnnotation(String typeName) {
        MethodInfo mi = getMethodInfo2();
        AnnotationsAttribute ainfo = (AnnotationsAttribute)
                    mi.getAttribute(AnnotationsAttribute.invisibleTag);  
        AnnotationsAttribute ainfo2 = (AnnotationsAttribute)
                    mi.getAttribute(AnnotationsAttribute.visibleTag);  
-       return CtClassType.hasAnnotationType(clz,
+       return CtClassType.hasAnnotationType(typeName,
                                             getDeclaringClass().getClassPool(),
                                             ainfo, ainfo2);
     }
@@ -917,7 +917,9 @@ public abstract class CtBehavior extends CtMember {
         // the gap length might be a multiple of 4.
         iterator.writeByte(Opcode.NOP, pos);
         boolean wide = subr + 2 - pos > Short.MAX_VALUE;
-        pos = iterator.insertGapAt(pos, wide ? 4 : 2, false).position;
+        int len = wide ? 4 : 2;
+        CodeIterator.Gap gap = iterator.insertGapAt(pos, len, false);
+        pos = gap.position + gap.length - len;
         int offset = iterator.getMark() - pos;
         if (wide) {
             iterator.writeByte(Opcode.GOTO_W, pos);
@@ -928,7 +930,11 @@ public abstract class CtBehavior extends CtMember {
             iterator.write16bit(offset, pos + 1);
         }
         else {
-            pos = iterator.insertGapAt(pos, 2, false).position;
+            if (gap.length < 4) {
+                CodeIterator.Gap gap2 =  iterator.insertGapAt(gap.position, 2, false);
+                pos = gap2.position + gap2.length + gap.length - 4; 
+            }
+
             iterator.writeByte(Opcode.GOTO_W, pos);
             iterator.write32bit(iterator.getMark() - pos, pos + 1);
         }

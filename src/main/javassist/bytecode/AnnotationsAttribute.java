@@ -39,7 +39,7 @@ import javassist.bytecode.annotation.*;
  *
  * <p>For example,
  *
- * <ul><pre>
+ * <pre>
  * import javassist.bytecode.annotation.Annotation;
  *    :
  * CtMethod m = ... ;
@@ -49,7 +49,7 @@ import javassist.bytecode.annotation.*;
  * Annotation an = attr.getAnnotation("Author");
  * String s = ((StringMemberValue)an.getMemberValue("name")).getValue();
  * System.out.println("@Author(name=" + s + ")");
- * </pre></ul>
+ * </pre>
  *
  * <p>This code snippet retrieves an annotation of the type <code>Author</code>
  * from the <code>MethodInfo</code> object specified by <code>minfo</code>.
@@ -57,17 +57,17 @@ import javassist.bytecode.annotation.*;
  *
  * <p>If the annotation type <code>Author</code> is annotated by a meta annotation:
  *
- * <ul><pre>
+ * <pre>
  * &#64;Retention(RetentionPolicy.RUNTIME)
- * </pre></ul>
+ * </pre>
  *
  * <p>Then <code>Author</code> is visible at runtime.  Therefore, the third
  * statement of the code snippet above must be changed into:
  *
- * <ul><pre>
+ * <pre>
  * AnnotationsAttribute attr = (AnnotationsAttribute)
  *         minfo.getAttribute(AnnotationsAttribute.visibleTag);
- * </pre></ul>
+ * </pre>
  *
  * <p>The attribute tag must be <code>visibleTag</code> instead of
  * <code>invisibleTag</code>.
@@ -83,7 +83,7 @@ import javassist.bytecode.annotation.*;
  * <p>If you want to record a new AnnotationAttribute object, execute the
  * following snippet:
  *
- * <ul><pre>
+ * <pre>
  * ClassFile cf = ... ;
  * ConstPool cp = cf.getConstPool();
  * AnnotationsAttribute attr
@@ -93,7 +93,7 @@ import javassist.bytecode.annotation.*;
  * attr.setAnnotation(a);
  * cf.addAttribute(attr);
  * cf.setVersionToJava5();
- * </pre></ul>
+ * </pre>
  *
  * <p>The last statement is necessary if the class file was produced by
  * <code>javac</code> of JDK 1.4 or earlier.  Otherwise, it is not necessary.
@@ -214,6 +214,32 @@ public class AnnotationsAttribute extends AttributeInfo {
     }
 
     /**
+     * Removes an annotation by type.
+     * After removing an annotation, if {@link #numAnnotations()} returns 0,
+     * this annotations attribute has to be removed.
+     *
+     * @param type        of annotation to remove
+     * @return whether an annotation with the given type has been removed
+     * @since 3.21
+     */
+    public boolean removeAnnotation(String type) {
+        Annotation[] annotations = getAnnotations();
+        for (int i = 0; i < annotations.length; i++) {
+            if (annotations[i].getTypeName().equals(type)) {
+                Annotation[] newlist = new Annotation[annotations.length - 1];
+                System.arraycopy(annotations, 0, newlist, 0, i);
+                if (i < annotations.length - 1) {
+                    System.arraycopy(annotations, i + 1, newlist, i,
+                                     annotations.length - i - 1);
+                }
+                setAnnotations(newlist);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Parses the annotations and returns a data structure representing
      * that parsed annotations.  Note that changes of the node values of the
      * returned tree are not reflected on the annotations represented by
@@ -258,7 +284,7 @@ public class AnnotationsAttribute extends AttributeInfo {
 
     /**
      * Changes the annotations.  A call to this method is equivalent to:
-     * <ul><pre>setAnnotations(new Annotation[] { annotation })</pre></ul>
+     * <pre>setAnnotations(new Annotation[] { annotation })</pre>
      *
      * @param annotation    the data structure representing
      *                      the new annotation.
@@ -350,15 +376,24 @@ public class AnnotationsAttribute extends AttributeInfo {
             return pos;
         }
 
+        /**
+         * {@code element_value_paris}
+         */
         final int memberValuePair(int pos) throws Exception {
             int nameIndex = ByteArray.readU16bit(info, pos);
             return memberValuePair(pos + 2, nameIndex);
         }
 
+        /**
+         * {@code element_value_paris[]}
+         */
         int memberValuePair(int pos, int nameIndex) throws Exception {
             return memberValue(pos);
         }
 
+        /**
+         * {@code element_value}
+         */
         final int memberValue(int pos) throws Exception {
             int tag = info[pos] & 0xff;
             if (tag == 'e') {
@@ -385,18 +420,33 @@ public class AnnotationsAttribute extends AttributeInfo {
             }
         }
 
+        /**
+         * {@code const_value_index}
+         */
         void constValueMember(int tag, int index) throws Exception {}
 
+        /**
+         * {@code enum_const_value}
+         */
         void enumMemberValue(int pos, int typeNameIndex, int constNameIndex)
             throws Exception {
         }
 
+        /**
+         * {@code class_info_index}
+         */
         void classMemberValue(int pos, int index) throws Exception {}
 
+        /**
+         * {@code annotation_value}
+         */
         int annotationMemberValue(int pos) throws Exception {
             return annotation(pos);
         }
 
+        /**
+         * {@code array_value}
+         */
         int arrayMemberValue(int pos, int num) throws Exception {
             for (int i = 0; i < num; ++i) {
                 pos = memberValue(pos);
@@ -470,9 +520,15 @@ public class AnnotationsAttribute extends AttributeInfo {
          *                  It can be null.
          */
         Copier(byte[] info, ConstPool src, ConstPool dest, Map map) {
+            this(info, src, dest, map, true); 
+        }
+
+        Copier(byte[] info, ConstPool src, ConstPool dest, Map map, boolean makeWriter) {
             super(info);
             output = new ByteArrayOutputStream();
-            writer = new AnnotationsWriter(output, dest);
+            if (makeWriter)
+                writer = new AnnotationsWriter(output, dest);
+
             srcPool = src;
             destPool = dest;
             classnames = map;
